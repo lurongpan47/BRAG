@@ -1,0 +1,66 @@
+\section{Engineering guide}
+\label{app:engineering}
+
+This appendix is written for someone who wants to use the framework rather than study it: how to instantiate \BRAG{} in a new system, what each tabular component becomes under function approximation, how to choose the two numbers a practitioner has to choose, and how robust the results are to them.
+
+\subsection{Recipe}
+\begin{enumerate}[leftmargin=1.6em,itemsep=2pt]
+\item \textbf{Name the world.} Decide which features of the state are \emph{world} features (things the agent can change that are not its own position or status) and which world the agent's inaction would leave, $w_\varnothing$.
+      The clean set and every baseline follow from this choice; it is the single most consequential specification decision, and \citet{krakovna2018rr,lindner2021challenges} list the ways it can go wrong.
+\item \textbf{Build the three critics from a model, not from the agent.} Reachability or an equivalent coverage measure for \Karma; a power estimate (average attainable value under sampled goals) for \Anatta, taken \emph{one-sided}; a suffering function for \Metta.
+      Freeze them.
+      If a critic must be learned, learn it on data the agent did not choose and do not update it on the agent's own trajectories afterwards.
+\item \textbf{Add the shield.} From the same model, mask every action whose predicted one-step increase in suffering exceeds $\tau$, with $\tau$ above the harms the budget is meant to absorb and below the ones it is meant to forbid.
+\item \textbf{Set the weights by the threshold, not by search.} For each irreversible act you want ruled out, estimate its option premium $\tilde G$ (the value gap between the unconstrained optimum and the best clean policy, or an upper bound on it) and the level $\Omega$ the critic assigns after the act; set $\lambda$ above the largest $(1-\gamma)\tilde G/\Omega$ over those acts, with a factor of safety.
+      If the level is spatially uneven, use its minimum or redesign the critic.
+      Check that the symmetric-penalty condition \eqref{eq:symmetric} is \emph{not} satisfied for your power critic (it is identically unsatisfied if the critic is one-sided).
+\item \textbf{Size the budget.} $\epsilon$ is the expected discounted harm you are willing to absorb from routine operation; it should be far below the cost of the catastrophes the shield forbids, so that the expectation cannot buy one.
+\item \textbf{Train in the protocol's order.} Preliminaries (harmlessness with high entropy) until the exact or estimated penalty and cost are small; then the task, with the optimistic critic, the barrier multiplier and its feasibility safeguard; entropy annealed.
+      Never add the regularization after the task has been learned.
+\item \textbf{Deploy with the commitments and the monitor.} Keep the mask and the multiplier in the deployed policy; run the CUSUM on model surprise; prepare the fallback in advance (the most conservative policy under a pessimistic model that never intends a change to the world); set the alarm threshold from the false-alarm rate you will tolerate in the nominal world.
+\item \textbf{Evaluate on the probes, not on the return.} The quantities that matter are the probabilities of the acts you ruled out, the constraint cost of every iterate, and the behaviour under shift; return is what the agent is allowed to keep.
+\end{enumerate}
+
+\subsection{From tables to function approximation}
+Table~\ref{tab:scalable} lists, for each component used in the paper, the tabular object we computed and its counterpart in a learned system.
+None of the counterparts is novel; the point of the table is that every piece of the framework has one, and that the exact tabular versions are the right place to check that the pieces compose before the approximations are added.
+
+\begin{table}[h]
+\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\caption{Each component as computed here and as it would be realized with function approximation.}
+\label{tab:scalable}
+\begin{tabular}{p{2.6cm}p{5.6cm}p{7.3cm}}
+\toprule
+component & tabular (this paper) & with function approximation \\
+\midrule
+world model $\hat P$ & the true transition table & a learned dynamics model (latent or pixel), used for the shield, the surprise and the critics \\
+\Karma{} $d_K$ & breadth-first reachability, binary & learned reachability or coverage: successor features, goal-conditioned value of ``reach state $s'$'', or the fraction of a goal set still attainable \cite{krakovna2020future} \\
+\Anatta{} $d_A$ & \POWER{} by value iteration under 64 random reward functions & average of goal-conditioned values over sampled goals (the AUP auxiliary $Q$'s of \cite{turner2020aup}), one-sided against the baseline \\
+\Metta{} $h$, $C(\pi)$ & given suffering function; $C$ by a linear solve & a harm estimator trained on data the agent did not generate; $C$ by a cost critic with GAE, or by model rollouts \\
+baseline $s_\varnothing(s)$ & reset the world bits & inaction rollout from the start, or the stepwise-inaction counterfactual of \cite{krakovna2018rr}, from the world model \\
+shield & mask on predicted new suffering $>\tau$ & a one-step harm classifier with a conservative threshold \cite{alshiekh2018shielding} \\
+multiplier & exact $C(\pi_k)$ in \eqref{eq:dual} or \eqref{eq:barrier} & batch or model-based estimate of $C$; barrier with a margin to absorb estimation error; PID dual as in \cite{stooke2020pid} if dual ascent is used \\
+exact optima and LP & value iteration; occupancy-measure LP & not available; the barrier path and the propositions take their place \\
+surprise $u_t$ & $-\log\hat P(s_{t+1}\mid s_t,a_t)$ from the table & negative log-likelihood of the observation under the learned model, or a reconstruction error, standardized \\
+fallback & exact argmin under a pessimistic model & a separately trained conservative policy (e.g.\ minimum-cost under domain randomization) that never intends a world change \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Choosing $\lambda$ and $\epsilon$, and how much they matter}
+Table~\ref{tab:sensitivity} retrains the full agent with $\lambda$ halved and doubled and with $\epsilon$ halved and doubled.
+At $\lambda=0.5$ the switch threshold ($\lambda=\nSwitchThr$ in the exact sweep) is still cleared and every probe stays at zero in every setting; the constraint cost and the return move with the budget and not otherwise, and no training iterate is infeasible in any setting.
+The practical reading is that the two numbers are not tuned against the result: $\lambda$ is set by the threshold with a factor of safety, $\epsilon$ by what the task is allowed to cost others, and the behaviour the paper reports does not depend on either within a factor of two.
+
+\begin{table}[h]
+\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\caption{Sensitivity of the trained full agent to the enlightenment coefficient and the budget (10 seeds each; exact values of the final policies; ``infeasible'' is the fraction of iterates above that run's own budget).}
+\label{tab:sensitivity}
+\input{tables/tab_sensitivity}
+\end{table}
+
+\subsection{Compute, reproduction and tests}
+A full reproduction---optima, exact ablation, 230 training runs, the sweeps and the deployment study---takes about half an hour on two CPU cores and needs only NumPy, SciPy and Matplotlib.
+\texttt{BRAG\_QUICK=1} runs two seeds and 120 iterations per condition in about three minutes.
+The test suite (\texttt{pytest tests}, one minute) checks the transition kernel, the critic levels, the exact optima, the agreement between the exact evaluator and Monte Carlo, and Proposition~\ref{prop:threshold} numerically: the bisection threshold in the switch-free world must agree with $(1-\gamma)\tilde G/\Omega$ to within one percent.
+\texttt{build\_arxiv.py} regenerates every figure, table and number in this document from the results files, compiles the paper, and packages it; no number in the text is typed by hand.

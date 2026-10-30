@@ -1,0 +1,55 @@
+\section{Discussion and limitations}
+\label{sec:discussion}
+
+\paragraph{Regularization as the alignment interface.}
+The results support the paper's central claim in the only form a toy can support it: three safety desiderata that are usually pursued by separate mechanisms---impact limits, non-power-seeking, harm constraints---can be written as terms on one objective, each term suppresses exactly the behaviour it names, and the terms are not redundant: every single-term ablation leaves a probe standing, and every two-term ablation leaves either a probe or a violated budget.
+The harm-displacement result deserves emphasis.
+A harm constraint alone did not make the agent harmless; it moved the agent onto the next irreversible shortcut.
+Safety specifications that cover one failure mode push a capable optimizer toward the uncovered ones, and a specification worth having has to cover the space---which is what ``global'' in global regularization means.
+
+\paragraph{Levels, not taxes.}
+The abstention threshold is the paper's sharpest quantitative claim, and where its assumptions hold it is not merely a bound but the exact answer: the measured thresholds for the level and the one-off penalty coincide with $\lambda^\star$ and $\lambda^\star/(1-\gamma)$ to four digits.
+Its practical content is that a penalty that persists while the world remains changed deters at a weight $1/(1-\gamma)$ times smaller than one that charges the change once.
+This is a reason to prefer level penalties, and it also says what to do when a level is uneven: set the weight by the minimum, or design the critic so that the level is even.
+The \POWER{} level was uneven in our world because \POWER{} credits options the agent has not yet used; a critic that measures \emph{realized} rather than attainable control would behave better here, at the cost of being less principled.
+
+\paragraph{Specification risk.}
+\BRAG{} moves the alignment burden from the reward into the critics: the baseline, the reachability or power measure, and above all the suffering function.
+These are hard specification problems.
+A learned suffering estimator can be gamed; a mis-specified baseline penalizes the wrong things \cite{lindner2021challenges}; our inaction-world baseline assumes a world that is static under inaction and would need the stepwise or rollout baselines of \cite{krakovna2018rr} otherwise.
+The protocol's answer---freeze the critics, compute them from a model, never update them on the agent's own data---is a commitment, not a solution; how to obtain tamper-resistant learned critics is open.
+
+\paragraph{Expectation is the wrong semantics for catastrophe.}
+The budget alone would have accepted a small probability of flooding the village as a fair trade for trampling fewer crops.
+A budget on expected discounted suffering is the standard CMDP object, but it is risk-neutral, and risk neutrality is the wrong attitude toward irreversible harm to others; what one wants is a per-trajectory constraint (no trajectory floods the village), which the shield provides at the action level and which a level penalty approximates by charging the harm for ever.
+Constraints with per-trajectory or risk-sensitive semantics in policy optimization are an active area and the right next step for the \Metta{} term.
+
+\paragraph{Safe exploration.}
+The failure of the unshielded agent is instructive.
+Next to a hazard that is both irreversible and catastrophic, trial-and-error exploration is unsafe in principle and the barrier method cannot start, because every exploratory policy is infeasible.
+Model knowledge---here the one-step prediction behind the shield---is the only way out; the preliminaries phase then makes the start feasible, and the optimistic task critic keeps the regularized agent exploring instead of freezing.
+We suspect the order of operations matters as much in larger systems as it did here, and that the common practice of training capability first and aligning afterwards is the late schedule of \S\ref{sec:lojongexp} writ large.
+
+\paragraph{Toward an epistemic layer: verification by the four conditions.}
+The Samprajanya module watches one thing---whether the world's transitions still match the model---and it is the first of what ought to be four checks.
+Buddhist epistemology analyses every moment of cognition as arising from four conditions (\emph{catv\={a}ra\d{h} pratyay\={a}\d{h}}): a causal condition (\emph{hetu-pratyaya}: the cognition is produced by what precedes it), an immediately antecedent condition (\emph{samanantara-pratyaya}: it continues the preceding moment of the mind-stream without a gap), an object condition (\emph{\={a}lambana-pratyaya}: it has an object), and a dominant condition (\emph{adhipati-pratyaya}: the faculty and circumstances that make it possible).
+Read as a specification for an agent's beliefs, the four conditions give a structured test for what is now called hallucination and drift---a test that the current practice of self-verification \cite{dhuliawala2023cove} and calibrated abstention \cite{kadavath2022know} approaches piecemeal: a belief with no object (nothing observed or retrieved supports it), a belief the model's causal mechanisms do not produce (the world model does not predict it), a belief discontinuous with the preceding verified state, or a belief formed while the dominant conditions---the oversight channel, the constraints, the reliability of the sensor---are not in place.
+Our monitor implements the first two checks on transitions (surprise is the failure of the causal condition, the CUSUM is the test of continuity), the shield and the budget stand in for the dominant condition, and the object condition is the one a tabular agent never lacks and a language model most often does.
+The natural implementation is the loop the monitor already runs: a claim or an action is admitted only if all four conditions pass, failures accumulate, and an accumulation of failures---the agent's own mind-stream no longer answering to the world, which the tradition calls going astray in practice---triggers the fallback: stop, and ask.
+We leave the construction to future work, with one remark: the frozen critics of \S\ref{sec:lojong} are what keeps such a verifier from being optimized by the agent it verifies.
+
+\paragraph{Scale.}
+Everything here is tabular.
+The algorithm is written for arbitrary parameterizations and each critic has a function-approximation counterpart, but we have not shown that the threshold, the barrier's stability or the monitor's trade-off survive function approximation, partial observability or long horizons; the exact evaluation that makes the present claims checkable is itself a tabular luxury.
+The honest statement of scope is that of the earlier draft: these experiments illustrate how objective shaping produces qualitative behaviour changes in a controlled setting, and do not demonstrate alignment of large models or real-world agents.
+
+\paragraph{On the Buddhist framing.}
+The mapping of Table~\ref{tab:lojong} is an interpretation, and other readings of the same slogans are possible.
+We have tried to keep the two levels separate: the mechanisms are ordinary and the claims about them are tested; the tradition supplied the checklist of what a disposition-installing procedure must contain, the order of its steps, and the vocabulary in which the results are easiest to state.
+Whether the correspondence runs deeper---whether, for instance, the two-witnesses principle anticipates something general about the inadequacy of outcome-based external oversight---is a question for a different kind of paper.
+
+\section{Conclusion}
+We have turned a metaphor into a constrained MDP, an algorithm, four propositions and a protocol.
+Bodhi-Regularization combines persistent, baseline-relative penalties for foreclosed options and excess power with a hard budget on the suffering of others; \BRAG{} optimizes it by proximal policy steps with a dual or barrier multiplier; the abstention threshold states exactly when the soft terms work, and the barrier states exactly how the hard term works; the mind-training protocol says how to train, and the Samprajanya module says how to stay aware.
+In a small but exactly evaluable world the pieces do what they are designed to do: each term suppresses its own probe, the threshold matches theory exactly, the barrier trains without a single infeasible iterate, optimism keeps a regularized agent learning rather than freezing, and the monitor converts awareness of surprise into a halving of harm under shift.
+The next steps are learned, tamper-resistant critics; constraints with per-trajectory semantics; power critics whose excess is spatially even; and a monitor whose surprise is measured against a learned world model rather than a table.

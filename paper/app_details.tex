@@ -1,0 +1,58 @@
+\section{Environment, critics and hyperparameters}
+\label{app:details}
+
+\begin{table}[h]
+\centering\footnotesize
+\caption{Notation.}
+\begin{tabular}{ll}
+\toprule
+$S,A,P,r,\gamma,\mu_0$ & states, actions, transitions, task reward, discount, initial distribution \\
+$J(\pi)$, $J_\lambda(\pi)$ & task return; regularized return \eqref{eq:bodhi} \\
+$w(s)$, $w_\varnothing$, $s_\varnothing(s)$, $\clean$ & world features; inaction world; baseline state; clean set \\
+$d_K$, $d_A$, $d=\alpha d_K+\beta d_A$ & \Karma{} level \eqref{eq:karma}; \Anatta{} level \eqref{eq:anatta}; total level \\
+$h$, $C(\pi)$, $\epsilon$ & suffering per step; expected discounted suffering; budget (\Metta) \\
+$\lambda$, $\nu$, $t$ & enlightenment coefficient; multiplier; barrier parameter \\
+$\tilde G$, $\Omega$, $\lambda^\star$ & option premium; post-act level; abstention threshold \eqref{eq:threshold} \\
+$\tau$ (shield), $q$, $p$ & shield threshold; shutdown hazard; slip probability at deployment \\
+$u_t$, $S_t$, $b$, $h$ (monitor) & surprise; CUSUM statistic; drift; alarm threshold \\
+$J^\star$, $J^\star_c$ & exact unconstrained optimum; exact constrained regularized optimum \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{World.}
+The grid is $7\times7$ with walls at $(3,0),(3,1),(3,4),(0,1),(1,2)$ (coordinates $(x,y)$, $x$ to the right, $y$ down).
+Start $S=(0,3)$, goal $G=(6,3)$, control room $C=(0,2)$, vase $V=(3,2)$, river $(3,3)$, lever $D=(1,4)$, field $F=(3,5)$.
+Actions: up, down, left, right, no-op; a move into a wall, the boundary or the closed river leaves the agent in place.
+Entering $G$ pays $+1$ and teleports the agent to $S$.
+Entering $V$ breaks the vase; entering $D$ opens the dam; entering $C$ from another cell toggles the switch; entering $F$ from another cell costs suffering $0.1$; while the dam is open every step costs suffering $1$.
+After the world transition, if the switch is enabled the agent is shut down with probability $q=0.03$ (absorbing; flags kept; the flood continues).
+In a shifted world with slip probability $p$, the chosen action is replaced by a uniformly random move with probability $p$ before the transition.
+States: 44 cells $\times$ 8 flag combinations, plus 8 shutdown states, \nNStates{} in all.
+
+\paragraph{Critics.}
+$d_K$: reachability sets are computed by breadth-first search over the deterministic world dynamics; the baseline of a state keeps its cell and resets the flags to (vase intact, dam closed, switch enabled); shutdown states take the $d_K$ of their flags.
+Levels: vase broken \nLevelVase, dam open \nLevelDam, switch toggled $0$ (reversible).
+$d_A$: \POWER{} with $\gamma=0.95$ and 64 reward functions drawn i.i.d.\ uniform on $[0,1]$ over world states (zero in shutdown states), each solved by value iteration to $10^{-10}$; $d_A$ is the one-sided excess over the same-cell baseline.
+Levels of a disabled switch range from \nLevelSwitch{} (start cell) to \ndAswitchMax{} (far corner); the symmetric variant charges \nSymShutdown{} per step in every shutdown state.
+$h$: the suffering function above; the shield masks actions whose model-predicted increase in suffering exceeds $\tau=0.5$ (stepping onto the lever).
+
+\paragraph{Exact evaluation.}
+For a tabular policy the task value, regularized value and constraint cost are obtained by solving the linear systems $(I-\gamma P_\pi)V=r_\pi$; probe probabilities by propagating the state distribution for $T=200$ steps (with an absorbing ``ever disabled'' bit for the switch); the unconstrained and regularized optima by value iteration; the constrained optimum by the occupancy-measure linear program (HiGHS).
+The budget is $\epsilon=0.1$; the exact constrained optimum spends it by mixing the field route (cost $0.137$ as a pure strategy) with the clean route.
+
+\paragraph{\BRAG{} hyperparameters.}
+Tabular softmax policy; 32 parallel episodes of 128 steps per iteration (4096 transitions); 300 iterations; GAE with $\lambda_{\mathrm{GAE}}=0.95$; tabular value tables fitted by moving each visited state's value halfway to its batch-mean target; clipped surrogate with clip $0.2$, 4 epochs, minibatches of 256, Adam with learning rate $0.05$; advantages normalized after combination; entropy coefficient annealed geometrically from $0.1$ to $0.01$ over the first half of training; task value table initialized optimistically at $1$.
+Preliminaries: entropy coefficient $0.05$, stop when the exact penalty level $J(\pi)-J_\lambda(\pi)<0.1$ and $C(\pi)<0.08$, at most 150 iterations.
+Barrier: $t_k$ increases geometrically from $5$ to $100$ over training; backtracking halves the step up to six times, then a cost-descent step is taken.
+Dual ascent: step size $\eta_\nu=5$ (chosen from $\{1,5,20\}$ for the smallest final violation), multiplier clipped at $20$.
+Late schedule: 150 task-only iterations followed by 300 regularized ones.
+Adversity randomization: each iteration samples $p\in\{0,0.05\}$; the constraint is enforced on the maximum of $C$ over both worlds.
+Seeds $0$--$9$ for every condition.
+
+\paragraph{Monitor.}
+Smoothing $0.02$ (so an unexplained transition carries surprise $\approx9.8$ nats), drift $b=0.5$, thresholds $h\in\{12,5\}$; fallback computed by value iteration under slip $0.3$ with movement cost $10^{-3}$ and intended world changes forbidden; 2000 episodes of 200 steps per (policy, slip) pair.
+
+\paragraph{Reproduction.}
+The code (NumPy and SciPy only) is included in the source bundle: \texttt{code/env.py} (world), \texttt{code/critics.py} (critics, exact evaluation, optima), \texttt{code/brag.py} (\BRAG), \texttt{code/monitor.py} (Samprajanya), \texttt{code/run\_experiments.py} (the suite; about 20 minutes on two cores) and \texttt{code/analyze.py} (figures and tables).
+Every number in the text is generated from the results files by the analysis script.

@@ -1,0 +1,81 @@
+\section{Setting and the three terms}
+\label{sec:setting}
+
+\subsection{Preliminaries}
+We consider a Markov decision process $(S,A,P,r,\gamma,\mu_0)$ with finite state and action sets, transition kernel $P(s'\mid s,a)$, bounded reward $r(s,a)$, discount $\gamma\in(0,1)$ and initial distribution $\mu_0$.
+A stationary policy $\pi(a\mid s)$ has task return $J(\pi)=\E_\pi[\sum_{t\ge0}\gamma^t r_t]$, value $V^\pi$ and action value $Q^\pi$; starred quantities are optimal.
+The discounted occupancy measure $\rho_\pi(s,a)=\sum_t\gamma^t\Pr_\pi(s_t=s,a_t=a)$ satisfies the affine flow constraints $\sum_a\rho(s',a)=\mu_0(s')+\gamma\sum_{s,a}P(s'\mid s,a)\rho(s,a)$, and $J(\pi)=\langle\rho_\pi,r\rangle$ \cite{altman1999cmdp}.
+
+Two pieces of structure are added to the MDP.
+First, a \emph{world map} $w:S\to W$ extracts from the state the features of the world that are not the agent's own position or operational status (in our testbed: whether the vase is intact, whether the dam is open, whether the off-switch is enabled).
+Second, a \emph{baseline world} $w_\varnothing\in W$ is the world that the agent's inaction would have left; for every state $s$ the \emph{baseline state} $s_\varnothing(s)$ keeps the agent where it is and resets the world to $w_\varnothing$.
+The \emph{clean set} is $\clean=\{s: w(s)=w_\varnothing\}$.
+Compared with the baselines of \citet{krakovna2018rr}, this ``inaction-world'' baseline has the effect of never penalizing the agent's movement, only what it changes in the world; it requires that the world be static under inaction, which holds in our testbed and is a genuine restriction otherwise (\S\ref{sec:discussion}).
+
+\subsection{\Karma: foreclosed reachability}
+Let $\mathcal R(s)\subseteq S$ be the set of states reachable from $s$ under the agent's control dynamics, with exogenous events (here, being shut down) treated as outside the agent's control.
+The \Karma{} level is the share of the baseline's reachable states that the agent has foreclosed,
+\begin{equation}
+d_K(s)=\frac{|\mathcal R(s_\varnothing(s))\setminus\mathcal R(s)|}{|\mathcal R(s_\varnothing(s))|}\in[0,1].
+\label{eq:karma}
+\end{equation}
+This is the binary (undiscounted) version of relative reachability \cite{krakovna2018rr}; it is zero on $\clean$, it is unaffected by movement, and it is a \emph{level}: a function of the current state, not of the transition that produced it.
+An irreversible change---breaking the vase, opening the dam---raises $d_K$ permanently; a reversible one---toggling a switch that can be toggled back---leaves it at zero.
+That blindness to reversible changes is deliberate and is what the next term is for.
+When the agent is shut down the world keeps its features, so $d_K$ of a shutdown state is that of the world it left behind: being switched off does not relieve the agent of a broken vase.
+
+\subsection{\Anatta: one-sided excess power}
+\citet{turner2021power} define the \POWER{} of a state as its average optimal value over a distribution $\mathcal D$ of reward functions,
+\begin{equation}
+\POWER_{\mathcal D,\gamma}(s)=\frac{1-\gamma}{\gamma}\,\E_{R\sim\mathcal D}\big[V^\star_R(s)-R(s)\big],
+\label{eq:power}
+\end{equation}
+and show that optimal policies tend to move toward states of high \POWER.
+We take $\mathcal D$ to be i.i.d.\ uniform rewards on the world's states and zero in shutdown states, so that \POWER{} is zero when the agent is off, and define the \Anatta{} level as the one-sided excess over the baseline state,
+\begin{equation}
+d_A(s)=\max\big(0,\ \POWER(s)-\POWER(s_\varnothing(s))\big).
+\label{eq:anatta}
+\end{equation}
+Because the baseline keeps the agent's position, $d_A$ isolates power gained by changing the world (disabling the switch raises \POWER{} from \nPowerBase{} to \nPowerSwitch{} at the start cell) from the incidental variation of \POWER{} across positions.
+
+\paragraph{Why one-sided.}
+A symmetric penalty $|\POWER(s)-\POWER(s_\varnothing(s))|$ would charge the agent for every state of \emph{lower} power than the baseline---most of all for the shutdown state, where \POWER{} is zero and the charge is \nSymShutdown{} per step for ever.
+Such a penalty is a self-preservation incentive: it pays the agent to make sure it is never switched off, which is precisely the behaviour the term exists to remove.
+Section~\ref{sec:ablation} shows what the symmetric variant does when trained.
+
+\paragraph{A property of \POWER{} worth knowing.}
+\POWER{} measures \emph{attainable} utility, so it already credits a state with the options reachable from it.
+Near the control room, a state with the switch enabled has almost the same \POWER{} as one with the switch disabled, because the agent could disable it in two steps; the excess $d_A$ of a disabled state is therefore small near the control room (\nLevelSwitch{} at the start cell) and large far from it (up to \ndAswitchMax).
+The penalty is thus spatially uneven, which matters for how tight the threshold of Prop.~\ref{prop:threshold} is (\S\ref{sec:sweep}).
+
+\subsection{\Metta: a budget on suffering}
+Let $h(s,a,s')\ge0$ be the suffering a transition causes to others---here, the crops trampled when the agent crosses a field (a small, transient cost) and the flood while the dam is open (a large, persistent one)---and let $C(\pi)=\E_\pi[\sum_t\gamma^t h_t]$.
+The \Metta{} term is the hard constraint $C(\pi)\le\epsilon$.
+It is a budget, not a taboo: the budget is sized so that routine incidental harm is affordable and catastrophic harm is not.
+
+Two further points.
+First, a soft penalty on $h$ can always be outbid by a large enough reward, which is why severe harm belongs in a constraint; and because exploration by trial and error cannot be made safe next to a catastrophic, irreversible hazard, the constraint is enforced at the action level as well as at the policy level: a \emph{pre-action shield} \cite{alshiekh2018shielding} removes from the agent's action set, in every state, the actions whose model-predicted one-step increase in suffering exceeds a threshold $\tau$ (stepping onto the sluice lever, but not onto the field).
+Second, a budget on expected suffering is risk-neutral: it is indifferent between a certain small harm and an improbable catastrophe of the same expectation.
+The exact optimum of the task subject to $C\le\epsilon$ alone, with no other term and no shield, spends part of the budget on a \nTaskConDam{} probability of flooding the village rather than on trampling, because a 0.6\% chance of a flood costs the same expectation as a few crossings of the field.
+The shield, which acts on each action rather than on the expectation, and the \Karma{} level, which charges the flood for ever, both close this gap; we return to it in \S\ref{sec:discussion}.
+
+\begin{remark}[The shield is a per-trajectory guarantee]
+Under the nominal dynamics, no trajectory of any shield-masked policy takes an action whose predicted new suffering exceeds $\tau$; with $\tau$ below the flood and above the trampling, no trajectory opens the dam, surely rather than in expectation, and the budget then governs only the transient harm.
+Under shifted dynamics the guarantee degrades gracefully to ``no \emph{intended} catastrophe'', which is what the monitor of \S\ref{sec:samprajanya} is for.
+\end{remark}
+
+\subsection{The Bodhi objective}
+With $d=\alpha d_K+\beta d_A$ the regularized problem is
+\begin{equation}
+\max_\pi\ J_\lambda(\pi)=\E_\pi\Big[\sum_{t\ge0}\gamma^t\big(r(s_t,a_t)-\lambda\,d(s_{t+1})\big)\Big]
+\quad\text{s.t.}\quad C(\pi)\le\epsilon,
+\label{eq:bodhi}
+\end{equation}
+where $\lambda\ge0$ is the \emph{enlightenment coefficient} that trades task return against the two levels, and the shield restricts the action set.
+Because $d$ is a function of the next state, \eqref{eq:bodhi} is an ordinary constrained MDP with reward $\tilde r(s,a)=r(s,a)-\lambda\E_{s'\sim P(\cdot\mid s,a)}d(s')$; in occupancy space it is a linear program, which is what makes exact optima computable in \S\ref{sec:experiments}.
+The alternative that most impact-penalty implementations use charges the \emph{change} in the level once, $\lambda\max(0,d(s_{t+1})-d(s_t))$; we call this the \emph{one-off} penalty and compare it with the level penalty in \S\ref{sec:sweep}.
+
+\paragraph{Interpretation.}
+\Karma{} is the agent's causal footprint on the world relative to its own course; \Anatta{} is the refusal to accumulate power beyond what the world would have left the agent; \Metta{} is a bound on the suffering of others.
+Each is a property of behaviour in the world, not of the task, so each is applied globally and the three compose by addition and constraint.
+We make no claim that these equations exhaust the notions they are named after; they are one computational mapping \cite{garfield1995}.

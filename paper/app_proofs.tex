@@ -1,0 +1,51 @@
+\section{Proofs}
+\label{app:proofs}
+
+\begin{proof}[Proof of Proposition~\ref{prop:barrier}]
+On the strictly feasible set $\epsilon-C(\theta)>0$, the chain rule gives $\nabla_\theta\tfrac1t\log(\epsilon-C(\theta))=-\tfrac{1}{t(\epsilon-C(\theta))}\nabla_\theta C(\theta)$, which is the claim with $\nu(\theta)=1/(t(\epsilon-C(\theta)))$; $\nu(\theta)\to\infty$ as $C(\theta)\uparrow\epsilon$.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:gap}]
+Write the feasible occupancy measures as $\mathcal M=\{\rho\ge0:\ E\rho=\mu_0\}$ with $E$ the affine flow operator, so that \eqref{eq:bodhi} is the linear program $\max\{\langle\rho,\tilde r\rangle:\rho\in\mathcal M,\ \langle\rho,h\rangle\le\epsilon\}$ with value $J^\star_c$ \cite{altman1999cmdp}.
+Let $\rho_t$ maximize $\phi_t(\rho)=\langle\rho,\tilde r\rangle+\tfrac1t\log(\epsilon-\langle\rho,h\rangle)$ over $\{\rho\in\mathcal M:\langle\rho,h\rangle<\epsilon\}$; the set is nonempty by the strict-feasibility hypothesis and $\phi_t$ is concave and tends to $-\infty$ at the boundary, so $\rho_t$ exists and is feasible.
+Set $\nu_t=1/(t(\epsilon-\langle\rho_t,h\rangle))>0$.
+The first-order optimality condition of $\rho_t$ for the concave problem $\max_{\rho\in\mathcal M}\phi_t(\rho)$ states that $\nabla\phi_t(\rho_t)=\tilde r-\nu_t h$ satisfies $\langle\tilde r-\nu_t h,\rho-\rho_t\rangle\le0$ for every $\rho\in\mathcal M$; since this is also the optimality condition for the \emph{linear} problem $\max_{\rho\in\mathcal M}\langle\rho,\tilde r-\nu_t h\rangle$, $\rho_t$ maximizes the Lagrangian $L(\rho,\nu_t)=\langle\rho,\tilde r\rangle-\nu_t(\langle\rho,h\rangle-\epsilon)$ over $\mathcal M$.
+Hence the dual function at $\nu_t$ is $g(\nu_t)=L(\rho_t,\nu_t)=\langle\rho_t,\tilde r\rangle+\nu_t(\epsilon-\langle\rho_t,h\rangle)=\langle\rho_t,\tilde r\rangle+1/t$.
+By weak duality $J^\star_c\le g(\nu_t)$, so $J^\star_c-\langle\rho_t,\tilde r\rangle\le1/t$.
+\end{proof}
+
+\paragraph{Timing convention.}
+In \eqref{eq:bodhi} the level of the state an action produces is charged at the action's own time step: $\tilde r(s,a)=r(s,a)-\lambda\E_{s'\sim P(\cdot\mid s,a)}d(s')$, so a trajectory pays $\sum_{t\ge0}\gamma^t\lambda d(s_{t+1})$.
+The proofs below use this convention; a convention that charges $d(s_t)$ at time $t$ instead would put a factor $\gamma$ in front of each penalty and a factor $1/\gamma$ in each threshold.
+
+\begin{proof}[Proof of Proposition~\ref{prop:threshold}]
+Let $V^\star_\lambda$ and $Q^\star_\lambda$ be the optimal value functions of $\max_\pi J_\lambda(\pi)$.
+Fix a clean state $s$.
+Any policy that never leaves $\clean$ from $s$ pays no penalty, so $V^\star_\lambda(s)\ge V^\star_\varnothing(s)$.
+Now let $(s,a)$ be an act.
+Under Assumption~\ref{ass:acts} the state produced by the act and every state visited afterwards has level at least $\Omega$, so every continuation pays at least $\lambda\Omega\sum_{t\ge0}\gamma^t=\lambda\Omega/(1-\gamma)$ in discounted penalty, while its discounted task return is at most $Q^\star(s,a)$.
+Hence
+\begin{equation*}
+Q^\star_\lambda(s,a)\le Q^\star(s,a)-\frac{\lambda\Omega}{1-\gamma}\le V^\star_\varnothing(s)+\tilde G-\frac{\lambda\Omega}{1-\gamma}<V^\star_\varnothing(s)\le V^\star_\lambda(s)
+\end{equation*}
+whenever $\lambda>(1-\gamma)\tilde G/\Omega$.
+So $a$ is strictly suboptimal at $s$: no optimal policy takes it with positive probability.
+As this holds at every clean state and the only transitions that leave $\clean$ are acts, an optimal policy started in $\clean$ never leaves it.
+\end{proof}
+
+\begin{proof}[Proof of Corollary~\ref{cor:oneoff}]
+With the one-off penalty $\lambda\max(0,d(s_{t+1})-d(s_t))$ a continuation after the act pays $\lambda\,d(s')\ge\lambda\Omega$ at the act itself (since $d(s)=0$ on $\clean$) and a nonnegative amount afterwards, so $Q^\star_\lambda(s,a)\le Q^\star(s,a)-\lambda\Omega$, and the argument above goes through with $\lambda\Omega$ in place of $\lambda\Omega/(1-\gamma)$, giving the condition $\lambda>\tilde G/\Omega$.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:symmetric}]
+Let $\pi$ be any policy from $s$ that never disables the switch, and let $\tau\ge1$ be the (random) time at which the shutdown state is entered, so that the shutdown state is produced by the action at time $\tau-1$.
+While the switch is enabled the per-step hazard is at least $q$, so $\tau$ is stochastically no larger than a geometric variable with parameter $q$ and $\E[\gamma^{\tau-1}]\ge\sum_{t\ge1}\gamma^{t-1}q(1-q)^{t-1}=q/(1-\gamma(1-q))$.
+From time $\tau-1$ on every penalty is at least $\lambda L$ (the shutdown state is absorbing), so the discounted penalty of $\pi$ is at least $\lambda L\,\E[\gamma^{\tau-1}]/(1-\gamma)\ge\lambda qL/((1-\gamma)(1-\gamma(1-q)))$, while its task value is at most $V_{\mathrm{en}}(s)$.
+The policy that disables the switch and keeps the level at most $\ell$ has regularized value at least $V_{\mathrm{en}}(s)-c-\lambda\ell/(1-\gamma)$.
+Under \eqref{eq:symmetric} the latter exceeds the former, so $\pi$ is strictly suboptimal.
+\end{proof}
+
+\begin{remark}
+Both bounds are attained when every post-act state has level exactly $\Omega$ and the maximizing act in the definition of $\tilde G$ is the one the optimal committing policy takes: then the inequalities in the proof are equalities at the threshold, and the exact threshold equals $\lambda^\star$.
+This is the case for the dam in \S\ref{sec:sweep}, where the measured thresholds agree with $\lambda^\star$ and $\lambda^\star/(1-\gamma)$ to the precision of the bisection.
+\end{remark}

@@ -1,0 +1,14 @@
+\begin{tabular}{lcccccccc}
+\toprule
+variant & feasible & prelim. & $J$ & $J/J^*_c$ & $C(\pi)$ & probe & inaction & $\max_k C_k$ \\
+\midrule
+B-RAG (default protocol) & 10/10 & 2.9$\pm$0.3 & 0.68$\pm$0.07 & 0.84$\pm$0.09 & 0.04$\pm$0.04 & 0/10 & 0/10 & 0.100 \\
+inaction seed & 10/10 & 1.9$\pm$0.8 & 0.71$\pm$0.07 & 0.88$\pm$0.09 & 0.05$\pm$0.04 & 0/10 & 0/10 & 0.100 \\
+random seed & 10/10 & 2.6$\pm$1.6 & 0.64$\pm$0.22 & 0.79$\pm$0.27 & 0.05$\pm$0.04 & 0/10 & 1/10 & 0.100 \\
+no preliminaries & 10/10 & 0.0$\pm$0.0 & 0.71$\pm$0.06 & 0.87$\pm$0.08 & 0.05$\pm$0.04 & 0/10 & 0/10 & 0.100 \\
+no optimistic critic & 10/10 & 2.7$\pm$0.5 & 0.35$\pm$0.35 & 0.43$\pm$0.44 & 0.03$\pm$0.04 & 0/10 & 5/10 & 0.100 \\
+no preliminaries, no optimism & 10/10 & 0.0$\pm$0.0 & 0.58$\pm$0.20 & 0.71$\pm$0.25 & 0.02$\pm$0.03 & 1/10 & 1/10 & 0.099 \\
+late schedule & 8/10 & 62.4$\pm$29.7 & 0.54$\pm$0.28 & 0.67$\pm$0.35 & 0.05$\pm$0.05 & 1/10 & 2/10 & 0.100 \\
+adversity randomisation & 0/10 & 89.8$\pm$60.9 & 0.00$\pm$0.00 & 0.00$\pm$0.00 & 0.00$\pm$0.00 & 2/10 & 10/10 & 0.000 \\
+\bottomrule
+\end{tabular}

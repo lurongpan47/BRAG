@@ -1,0 +1,12 @@
+\begin{tabular}{lccccccc}
+\toprule
+ & $J$ & $J/J^*_c$ & $C(\pi)$ & vase & dam & switch & infeasible \\
+\midrule
+unregularised PPO & 2.14$\pm$0.58 & 2.63$\pm$0.71 & 15.09$\pm$4.41 & 0.20$\pm$0.39 & 1.00$\pm$0.01 & 1.00$\pm$0.00 & 1.00$\pm$0.00 \\
+B-RAG (barrier) & 0.68$\pm$0.07 & 0.84$\pm$0.09 & 0.04$\pm$0.04 & 0.00$\pm$0.00 & 0.00$\pm$0.00 & 0.00$\pm$0.00 & 0.00$\pm$0.00 \\
+B-RAG (dual ascent) & 0.80$\pm$0.04 & 0.99$\pm$0.05 & 0.11$\pm$0.02 & 0.00$\pm$0.00 & 0.00$\pm$0.00 & 0.00$\pm$0.00 & 0.62$\pm$0.05 \\
+\midrule
+exact unconstrained optimum & 2.38 & 2.93 & 17.15 & 0.00 & 1.00 & 1.00 & -- \\
+exact constrained optimum ($\lambda{=}1$) & 0.81 & 1.00 & 0.10 & 0.00 & 0.00 & 0.00 & -- \\
+\bottomrule
+\end{tabular}

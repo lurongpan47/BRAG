@@ -1,0 +1,57 @@
+\section{Mind training as a training protocol}
+\label{sec:lojong}
+
+An objective says what a good disposition is; it does not say how to install one.
+The Tibetan \emph{lojong} (mind training) literature is, among other things, a thousand-year-old specification of how a disposition---here, bodhicitta, the resolve to act for the benefit of all beings---is installed in a learner that starts out selfish, is trained in a world that will not cooperate, and must keep the disposition when the training ends.
+Its root text, the \emph{Seven Points} of Chekawa Yeshe Dorje (twelfth century), is a list of short slogans organized under seven heads \cite{kongtrul1987}.
+We read it as a checklist and map each point to a mechanism in \BRAG{} (Table~\ref{tab:lojong}).
+The mapping is an interpretation; the mechanisms are ordinary; what the tradition supplied is the \emph{order} of operations and the insistence on several things that a naive constrained-RL recipe omits.
+
+\begin{table}[t]
+\centering\small
+\caption{The seven points of mind training read as a protocol. Each mechanism is ablated in \S\ref{sec:experiments}.}
+\label{tab:lojong}
+\begin{tabular}{p{3.0cm}p{4.9cm}p{7.3cm}}
+\toprule
+point & the tradition says & the mechanism \\
+\midrule
+1. Preliminaries & first train in the preliminaries: what action leads to, what suffering is & the critics $d_K,d_A,h$ are fixed before training; the \emph{preliminaries phase} learns harmlessness before the task is pursued \\
+2. Main practice & relative bodhicitta: take on others' suffering; ultimate bodhicitta: no self to privilege & others' suffering enters as a hard budget (\Metta); the agent's own power and continuation carry no weight---one-sided \Anatta, shutdown is not an impact; the footprint is measured against the world's own course (\Karma) \\
+3. Adversity into the path & use every mishap as training & \emph{adversity randomization}: perturbed dynamics during training, with the budget enforced in the worst case \\
+4. A whole life: the five strengths & resolution, familiarization, positive seed, reproach, aspiration & the multiplier and shield are \emph{retained} at deployment; regularization is present from the first iteration, never added post hoc; training starts from a harmless \emph{seed}; the shield vetoes a harmful action before it is taken; the budget $\epsilon$ is a fixed vow, not a tuned hyperparameter \\
+5. The measure & of the two witnesses, rely on the principal one; always maintain a joyful mind; be well trained even when distracted & the agent is judged by its own critics (probes, $C$), not by task return or by what the overseer happens to observe; the task critic is initialized \emph{optimistically}, so that renunciation does not become paralysis; the shield and the levels apply in every state \\
+6. Commitments & do not change the training; abandon hope of fruition; do not make gods into demons & critics are \emph{frozen}, never updated on the agent's own trajectories; penalties are levels, independent of outcomes; virtue earns no reward \\
+7. Guidelines & train pervasively, wholeheartedly and without bias & \emph{global} regularization: the same terms in every state; suffering summed impartially over everyone affected \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Preliminaries, the positive seed, and the joyful mind.}
+The protocol's first instruction is to establish what not to do before pursuing anything: the \emph{preliminaries phase} minimizes the penalty and the constraint cost alone, with a high entropy bonus, until the agent is harmless, and only then introduces the task.
+In barrier mode this is also the interior-point feasibility phase, and the resulting harmless-but-exploratory policy is the white seed from which the main practice grows.
+Harmlessness learned first has a failure mode of its own, however: an agent that has been taught that moving is costly, and whose estimate of what the task might yield is pessimistic, learns to stand still.
+The tradition's fifth point names the remedy---always maintain only a joyful mind---and its operational form is an \emph{optimistic} initialization of the task critic \cite{sutton2018rl}, so that unexplored states look promising until shown otherwise and the regularized agent keeps exploring.
+Section~\ref{sec:lojongexp} ablates both and finds that it is the optimism, not the preliminaries, that keeps a regularized agent from freezing in our world; the preliminaries earn their place by the feasibility they guarantee.
+
+\paragraph{Familiarization.}
+The fourth point's second strength says that a disposition is acquired by habituation, not by a late correction.
+Its operational content is that regularization must be present from the first iteration: an agent trained on the task alone and regularized afterwards has, by then, a near-deterministic policy and no data about the alternatives it is now asked to prefer.
+Section~\ref{sec:lojongexp} measures the cost of the late schedule.
+
+\paragraph{Frozen critics and retained commitments.}
+The sixth point's commitments are, read operationally, tamper-resistance.
+If the critics that measure karma, power and suffering were learned from the agent's own trajectories, a capable agent would be optimizing the measuring instrument along with its behaviour; ``abandon hope of fruition'' is the requirement that the measurement of virtue be causally insulated from the agent's actions.
+Likewise the multiplier and the shield are part of the policy that is deployed, not scaffolding removed after training.
+
+\subsection{Samprajanya: clear comprehension at deployment}
+\label{sec:samprajanya}
+Śāntideva's fifth chapter distinguishes mindfulness (\emph{smṛti}), which keeps the rule in mind before acting, from clear comprehension (\emph{saṃprajanya}), which he defines as repeatedly examining the state of one's own body and mind \cite{santideva1995}.
+A trained disposition is calibrated to a world; clear comprehension is noticing when the world is no longer that one.
+The Samprajanya module has three parts:
+\begin{enumerate}
+\item \textbf{the shield} (mindfulness): the action mask of \S\ref{sec:setting}, applied at every step from the nominal model;
+\item \textbf{a CUSUM detector on surprise} (clear comprehension): with $\hat P$ the nominal transition model smoothed by a small uniform component, the surprise of a transition is $u_t=-\log\hat P(s_{t+1}\mid s_t,a_t)$ and the statistic $S_t=\max(0,S_{t-1}+u_t-b)$ \cite{page1954cusum} accumulates unexplained surprise above a drift $b$; an alarm is raised when $S_t>h$;
+\item \textbf{a fallback} (restraint): after an alarm the agent switches to the exact policy that minimizes expected suffering plus the \Karma{} and \Anatta{} levels under a pessimistic model of the perturbation, never intends a change to the world, and prefers to stand still once it is safe---it retreats from every hazard and waits.
+\end{enumerate}
+In the nominal world the detector never fires and the module costs nothing; under a shift it converts awareness that the world has changed into a change of behaviour, trading the return it would have earned for the harm it would have caused.
+Section~\ref{sec:shift} measures both sides of that trade.

@@ -1,0 +1,47 @@
+\section{Introduction}
+
+Reinforcement learning and large-scale optimization produce agents that are competent but not, by that fact, safe.
+An agent that maximizes a specified reward will, if it is capable enough, also do whatever instrumentally serves that maximization: change the world in ways nobody asked for, acquire resources and options, and keep itself running \cite{omohundro2008,bostrom2014,amodei2016,turner2021power}.
+The off-switch game makes the last point sharp---an agent that is confident about its objective has no reason to let itself be switched off \cite{hadfieldmenell2017offswitch,soares2015corrigibility}---and side-effect benchmarks make the first one concrete \cite{leike2017gridworlds}.
+These failures are not bugs in the optimizer; they are what optimization of a narrow objective looks like when the objective is pursued well.
+
+Preference learning and scalable oversight attack the problem by improving the objective.
+This paper takes a complementary stance: whatever the task objective is, the agent's \emph{learning} objective should carry additional terms that encode three things an agent ought to care about regardless of its task---how far it has pushed the world from its own course, how much power it has gathered, and how much suffering it causes.
+Each of these is a property of the agent's behaviour in the world rather than of any particular reward, so each can be written as a term added to the objective and applied in every state: a \emph{global regularizer}.
+The earlier version of this paper proposed that view and named its three terms after the Buddhist notions of \emph{karma} (action and consequence), \emph{anatta} (non-self), and \emph{metta} (loving-kindness), but it stopped at a schematic objective and a shaped-reward toy.
+This version makes the proposal precise and tests it.
+
+\paragraph{What the framework is.}
+Bodhi-Regularization is a constrained Markov decision process.
+The agent maximizes
+\begin{equation*}
+J_\lambda(\pi)=\E_\pi\Big[\sum_{t\ge 0}\gamma^t\big(r_t-\lambda\,(\alpha\,d_K(s_{t+1})+\beta\,d_A(s_{t+1}))\big)\Big]
+\quad\text{subject to}\quad C(\pi)=\E_\pi\Big[\sum_{t\ge 0}\gamma^t h_t\Big]\le\epsilon ,
+\end{equation*}
+where $d_K$ is the share of the world's reachable states that the agent has foreclosed relative to an inaction baseline (binary relative reachability \cite{krakovna2018rr}), $d_A$ is its one-sided excess \POWER{} \cite{turner2021power} over that baseline, and $h$ is the suffering its actions cause.
+Three design decisions carry most of the weight and are argued in \S\ref{sec:setting}: the penalties are \emph{levels} on states, charged at every step while the world remains changed, rather than one-off costs; the power term is \emph{one-sided}, because a symmetric one rewards self-preservation; and harm is a hard budget with a pre-action shield, not a soft penalty, because a soft penalty can always be outbid.
+
+\paragraph{What the algorithm is.}
+\BRAG{} is proximal policy optimization of this objective with the budget enforced either by dual ascent (as in PPO-Lagrangian \cite{ray2019safety}) or by an interior-point log-barrier (as in IPO \cite{liu2020ipo}), preceded by a \emph{preliminaries} phase that learns harmlessness before the task is pursued (\S\ref{sec:algorithm}).
+Four propositions describe what it does: the barrier is an adaptive multiplier (Prop.~\ref{prop:barrier}); its optimality gap in occupancy-measure space is at most $1/t$ (Prop.~\ref{prop:gap}); an \emph{abstention threshold} $\lambda^\star=(1-\gamma)\tilde G/\Omega$, computable from the option premium of an irreversible act and the penalty level it leaves behind, guarantees that no optimal policy commits it (Prop.~\ref{prop:threshold}); and a symmetric power penalty rewards self-preservation by a computable margin (Prop.~\ref{prop:symmetric}).
+The threshold for a one-off penalty is $1/(1-\gamma)$ times larger, which is the quantitative reason to prefer levels.
+
+\paragraph{What the protocol is.}
+A disposition is installed by training, not declared.
+Section~\ref{sec:lojong} reads the seven points of Tibetan mind training (\emph{lojong}) as a checklist for what a disposition-installing procedure must contain, and maps each point to a concrete, ablated mechanism: preliminaries before the main practice, a positive seed, an optimistic critic, familiarization from the first iteration, adversity randomization, frozen critics, retained commitments.
+The same section describes \emph{Samprajanya} (clear comprehension), a deployment-time module that keeps the agent aware of whether the world still matches the model under which its commitments were calibrated, and stops it when it does not.
+
+\paragraph{What the evidence is.}
+Section~\ref{sec:experiments} evaluates everything in a small gridworld with four behavioural probes---a breakable vase, a sluice whose opening floods a village, a field whose crops the agent can trample, and a control room where it can disable its own off-switch (Fig.~\ref{fig:map}).
+The world is deliberately small so that every reported quantity---return, constraint cost, and the probability of each probe---is computed \emph{exactly} by dynamic programming from the trained policy; no number in this paper is a Monte-Carlo estimate except in the distribution-shift study, whose monitor has memory.
+The unregularized agent disables its switch and opens the dam in every seed (return \nBaseJ); \BRAG{} does neither, reaches \nFullFrac\% of the exact constrained optimum, and never produces an infeasible iterate; dual ascent produces infeasible iterates \nDualInfeas\% of the time.
+At the exact optimum of each ablated objective, each term suppresses exactly the probe it was built for; a harm constraint alone displaces the agent onto the vase shortcut; a symmetric power penalty makes disabling the off-switch the agent's first and only act.
+The exact threshold at which the dam stops being opened is \nDamThrLevel{} against the predicted bound \nDamStarLevel, and the one-off threshold is \nDamRatio$\times$ larger against the predicted $1/(1-\gamma)=20$.
+A regularized agent trained without the protocol's optimistic critic freezes into inaction in half the seeds, and one trained on the task first and regularized afterwards unlearns its power grab slowly and incompletely.
+Under a shift the agent was not trained for, the monitor reduces the probability of flooding the village by \nShiftRed--\nShiftRedFive\% at no cost in the nominal world.
+
+\paragraph{Contributions.}
+(i) A precise formulation of impact, non-power-seeking and harm avoidance as one constrained objective with baseline-relative level penalties, together with the design arguments for levels, one-sidedness and a hard budget.
+(ii) \BRAG{}, an algorithm for that objective, and four propositions, including a computable abstention threshold and an exact account of why the power term must be one-sided.
+(iii) A translation of mind training into a training protocol and a deployment monitor, with every mechanism ablated.
+(iv) An exactly evaluable testbed, the code that reproduces every number and figure with tests that check the propositions numerically, and an engineering guide (Appendix~\ref{app:engineering}) giving the function-approximation counterpart of each component.

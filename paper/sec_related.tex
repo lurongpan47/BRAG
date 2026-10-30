@@ -1,0 +1,32 @@
+\section{Related work}
+\label{sec:related}
+
+\paragraph{Impact regularization.}
+The idea that an agent should be penalized for changing the world more than its task requires has a line of work behind it.
+\citet{krakovna2018rr} define relative reachability---the reachability of states lost relative to a baseline---and discuss the choice of baseline (starting state, inaction, stepwise inaction) and of deviation measure; \citet{krakovna2020future} recast the penalty as the agent's ability to perform future tasks.
+\citet{turner2020aup} preserve attainable utility for a set of auxiliary reward functions.
+\citet{lindner2021challenges} catalogue the ways such penalties fail---offsetting, interference, delayed effects, sensitivity to the baseline.
+Our \Karma{} term is the binary relative-reachability measure with an inaction-world baseline that keeps the agent's own position fixed; what we add is the insistence that it be a \emph{level}, and the threshold theorem that says why.
+
+\paragraph{Power-seeking and corrigibility.}
+\citet{omohundro2008} and \citet{bostrom2014} argued informally that capable optimizers acquire resources and preserve themselves; \citet{turner2021power} made the argument formal, defining \POWER{} as average attainable utility and showing that optimal policies tend to seek it, and \citet{turner2022retargetable} generalized it beyond optimality.
+\citet{gunter2024stability} quantify how stable non-power-seeking is to perturbations of the policy.
+Our \Anatta{} term is the one-sided excess of exactly that quantity over a baseline.
+Corrigibility \cite{soares2015corrigibility} and the off-switch game \cite{hadfieldmenell2017offswitch} frame shutdown behaviour as a game between agent and overseer; \citet{orseau2016interruptible} show how an agent can be trained not to learn to avoid interruptions; \citet{carey2023control} define and compare notions of human control.
+We do not model the overseer strategically: the off-switch is a probe, and a penalty on realized power is one way to keep an agent from disabling it.
+The requirement that the critics be frozen is the reward-tampering problem \cite{everitt2021tampering} seen from the other side, and the collapse of models trained on their own outputs \cite{shumailov2024collapse} is the same failure in a learning system.
+
+\paragraph{Constrained reinforcement learning.}
+Constrained MDPs \cite{altman1999cmdp} are the standard formalism for hard behavioural budgets.
+Constrained policy optimization \cite{achiam2017cpo}, reward-constrained policy optimization \cite{tessler2019rcpo}, PPO-Lagrangian \cite{ray2019safety}, PID-Lagrangian \cite{stooke2020pid} and interior-point policy optimization \cite{liu2020ipo} are the main first-order methods; the barrier method of \cite{liu2020ipo} is the one our \Metta{} term follows, and Prop.~\ref{prop:gap} is the standard interior-point duality bound \cite{boyd2004convex} applied to the occupancy-measure LP.
+Shielding \cite{alshiekh2018shielding} enforces a safety specification at the action level before the agent acts; our pre-action shield is the action-level half of the \Metta{} term, and the safe-exploration literature \cite{garcia2015survey} is the background to our claim that trial and error cannot be made safe next to an irreversible hazard.
+Risk-sensitive constraints \cite{chow2018risk} are the natural remedy for the risk neutrality of an expected-cost budget that \S\ref{sec:setting} points out.
+
+\paragraph{Change detection and monitoring.}
+The CUSUM procedure \cite{page1954cusum} is the classical sequential test for a change in distribution.
+We apply it to the agent's model surprise, which turns an epistemic signal (``the world is not behaving as I expected'') into a behavioural one (``fall back'').
+
+\paragraph{Buddhist philosophy as design vocabulary.}
+We use the tradition's terms as a systems vocabulary and its mind-training literature as a design checklist, not as a claim that the mathematics exhausts the philosophy.
+The relevant sources are Nāgārjuna's analysis of dependent origination and non-self \cite{garfield1995}, Śāntideva's account of mindfulness and clear comprehension in \emph{Bodhicaryāvatāra} V \cite{santideva1995}, and the \emph{Seven Points of Mind Training} of Chekawa Yeshe Dorje in Jamgön Kongtrül's commentary \cite{kongtrul1987}.
+Section~\ref{sec:lojong} says exactly which sentence of the tradition each mechanism is read from.

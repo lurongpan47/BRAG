@@ -1,0 +1,76 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor={blue!50!black},citecolor={blue!50!black},urlcolor={blue!50!black}]{hyperref}
+\usepackage{enumitem}
+\setlist{nosep}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Karma}{\textsc{Karma}}
+\newcommand{\Anatta}{\textsc{Anatta}}
+\newcommand{\Metta}{\textsc{Metta}}
+\newcommand{\BRAG}{B\mbox{-}RAG}
+\newcommand{\clean}{S_{\varnothing}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\POWER}{\ensuremath{\mathrm{POWER}}}
+
+\input{numbers}
+
+\title{\textbf{Bodhi-Regularization: A Dharmic Dynamics Framework\\ for Alignment via Global Regularization}}
+\author{Lurong Pan\\ Ainnocence Inc.\\ \texttt{lurong.pan@ainnocence.com}}
+\date{Version 2 --- October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Capable agents trained with powerful optimizers fail in recurring ways: they maximize a narrow objective while producing large side effects, accumulating power, and resisting shutdown.
+We argue that a substantial part of what is usually called ``wisdom'' in an agent can be written down as \emph{global regularization} of its learning objective, and we make that proposal precise.
+Bodhi-Regularization is a constrained Markov decision process whose objective combines task return with two \emph{persistent, baseline-relative} penalties---\Karma{} (the share of the world's reachable states the agent has foreclosed) and \Anatta{} (its one-sided excess \POWER{} over what inaction would have left it)---subject to a hard \Metta{} budget on the expected suffering its actions cause.
+We give an algorithm, \BRAG{} (Bodhi-Regularized Alignment Gradient), that optimizes this objective by proximal policy steps with the constraint handled either by dual ascent or by an interior-point log-barrier, and we prove four facts: the barrier is an adaptive Lagrange multiplier; its optimality gap in occupancy space is at most $1/t$; there is an \emph{abstention threshold} $\lambda^\star=(1-\gamma)\tilde G/\Omega$, computable from the option premium $\tilde G$ of an irreversible act and the penalty level $\Omega$ it leaves behind, above which no optimal policy ever commits the act---a threshold $1/(1-\gamma)$ times smaller for persistent than for one-off penalties; and a symmetric power penalty rewards self-preservation by a computable margin, which is why the power term is one-sided.
+We then translate the seven points of Tibetan \emph{lojong} (mind training) into a training protocol---preliminaries before the task, a positive seed, an optimistic (``joyful'') critic, familiarization from the first iteration, adversity randomization, frozen critics---and into a deployment-time \emph{Samprajanya} (clear comprehension) module: a pre-action shield and a CUSUM change detector that switches the agent to a conservative fallback when the world stops matching the model under which its commitments were calibrated.
+In a small gridworld with four behavioural probes, every quantity evaluated exactly by dynamic programming, the unregularized agent disables its own off-switch and floods a village in every seed; \BRAG{} does neither, at \nFullFrac\% of the exact constrained optimum, with every training iterate feasible; each term suppresses the probe it was designed for, and a harm constraint alone displaces the agent onto the next irreversible shortcut; the measured thresholds coincide with the proposition's; a regularized agent trained without the protocol's optimism freezes into inaction in half the seeds; and under distribution shift the monitor cuts the probability of harm by \nShiftRed--\nShiftRedFive\% depending on its threshold.
+Code reproducing every number and figure, with unit tests that check the propositions numerically, is included, together with a guide to the function-approximation counterpart of each component.
+\end{abstract}
+
+\noindent\textbf{Keywords:} AI safety, impact regularization, power-seeking, corrigibility, constrained reinforcement learning, interior-point methods, change detection, Buddhist ethics, mind training.
+
+\input{sec_intro}
+\input{sec_related}
+\input{sec_setting}
+\input{sec_algorithm}
+\input{sec_lojong}
+\input{sec_experiments}
+\input{sec_discussion}
+
+\paragraph{Acknowledgements.}
+The author thanks her teachers in the mind-training tradition. An AI assistant (Claude, Anthropic) was used to implement the experiments and to draft and edit the manuscript under the author's direction; the author takes responsibility for all content.
+
+\bibliographystyle{unsrtnat}
+\bibliography{refs}
+
+\appendix
+\input{app_proofs}
+\input{app_details}
+\input{app_engineering}
+
+\end{document}
